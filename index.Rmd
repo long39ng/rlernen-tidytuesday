@@ -1,0 +1,82 @@
+---
+title: "Example TidyTuesday Plots"
+author: "Long Nguyen & Andreas Neumann"
+date: "2023-03-17"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    seal: false
+    nature:
+      ratio: 16:9
+      highlightStyle: github
+      highlightLines: true
+      slideNumberFormat: ""
+    navigation:
+      scroll: false
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+
+knitr::opts_chunk$set(
+  fig.width = 5.67, fig.asp = 1, dpi = 96,
+  fig.path = "figs/",
+  fig.align = "center",
+  dev = "ragg_png",
+  comment = "",
+  cache = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  hiline = TRUE
+)
+
+knitr::knit_hooks$set(optipng = knitr::hook_optipng)
+
+xaringanExtra::use_extra_styles(hover_code_line = TRUE)
+
+library(flipbookr)
+library(tidyverse)
+```
+
+---
+
+```{r data, include=FALSE}
+astronauts <- readRDS("astronauts.rds") |>
+  summarise(
+    hours = sum(hours_mission),
+    first_year = min(year_of_mission),
+    last_year = max(year_of_mission),
+    .by = name
+  ) |>
+  arrange(-first_year) |>
+  mutate(id = row_number()) |>
+  relocate(id)
+```
+
+`r chunk_reveal("plot-astro", left_assign = TRUE)`
+
+```{r plot-astro, include=FALSE}
+p <- astronauts |>
+  ggplot(aes(x = id, colour = first_year, fill = first_year)) +
+  geom_point(aes(y = 0), shape = 17, size = .3) +
+  geom_point(aes(y = hours + 5, size = hours)) +
+  ggforce::geom_link(
+    aes(
+      x = id, xend = id,
+      y = 0, yend = hours + 5,
+      colour = first_year,
+      colour = after_scale(colorspace::desaturate(colour, .3)),
+      alpha = hours
+    ),
+    n = 300,
+    linewidth = 0.25
+  ) +
+  scico::scale_color_scico(palette = "hawaii", guide = "none") +
+  scico::scale_fill_scico(palette = "hawaii", guide = "none") +
+  scale_size(range = c(.001, 3), guide = "none") +
+  scale_alpha(range = c(.33, 1), guide = "none") +
+  coord_polar(theta = "y", start = 4.71, clip = "off") +
+  scale_x_continuous(limits = c(-250, NA), expand = c(0, 0)) +
+  theme_void() +
+  theme(plot.background = element_rect(fill = "black"))
+```
